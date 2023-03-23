@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 
 def query_data(plate,exp_folder):
-    files= glob.glob(exp_folder+'/*'+plate+'*/Images/*.tiff')
+    files= glob.glob(exp_folder+'*'+plate+'*/*.tiff')
     files.sort()
     files=pd.DataFrame(files,columns=['file_path'])
     files['filename']=[i[i.find('/r')+1:] for i in files.file_path]
@@ -31,13 +31,13 @@ def check_if_file_exists(csv_file,Wells,last_field):
     if os.path.exists(csv_file):
         Vector=pd.read_csv(csv_file,index_col=0,header=0)
     
-        indSS=Vector.index[-1]+1
+        ind=Vector.index[-1]+1
         
         lastWell=Vector.Well[Vector.index[-1]]
         Site_ex=Vector.Site[Vector.index[-1]]
 
         if (lastWell==Wells[-1]) and (Site_ex==last_field):
-            return 'over', indSS,Wells,Site_ex,True
+            return 'over', ind,Wells,Site_ex,True
 
         Wells=Wells[np.where(Wells==lastWell)[0][0]:]
 
@@ -53,11 +53,11 @@ def check_if_file_exists(csv_file,Wells,last_field):
     else:
         flag=True
         
-        indSS=0
+        ind=0
         
 
     
-    return flag,indSS,Wells,Site_ex,flag2
+    return flag,ind,Wells,Site_ex,flag2
     
 
 
@@ -91,12 +91,19 @@ def process_Zstack(image_fnames,Channel,np_images):
         np_images.append(imgCh.astype('uint8'))
     return np_images
 
-def show_cells(images,title=[''],size=4):
-    _,ax=plt.subplots(1,len[images],figsize=(int(size*len(images)),size))
-    for i in range(len(images)):
-        ax[i].imshow(images[0])
-        if len(title)==len(images):
-            ax[i].set_title(title[i])
-        else:
-            ax[0].set_title(title[0])
-        ax[i].axis('off')
+def show_cells(images,title=[''],size=3):
+
+    _,ax=plt.subplots(1,len(images),figsize=(int(size*len(images)),size))
+    if len(images)>1:
+        for i in range(len(images)):
+            ax[i].imshow(images[i],cmap='Greys_r')
+            if len(title)==len(images):
+                ax[i].set_title(title[i])
+            else:
+                ax[0].set_title(title[0])
+            ax[i].axis('off')
+    else:
+        ax.imshow(images[0])
+        ax.set_title(title[0])
+        ax.axis('off')
+    plt.show()

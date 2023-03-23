@@ -3,6 +3,20 @@ from scipy import ndimage as ndi
 import numpy as np
 import skimage
 
+def compute_DNA_mask(DNAimg):
+
+    Am = ndi.gaussian_filter((DNAimg), 3)
+    filter_Am = ndi.gaussian_filter(Am, 1)
+    alpha = 10
+    Am = Am + alpha * (Am - filter_Am)
+    Am = Am > skimage.filters.threshold_multiotsu(Am)[0]*0.9
+
+    Am = ndi.binary_closing(Am, structure=skimage.morphology.disk(2))
+    Am = ndi.binary_fill_holes(Am)
+
+    Lab = skimage.measure.label(Am)
+
+    return Lab
 
 def Count_DAPI_IPSCs(img3,CellSize=20,fact=1):
     imgDen = ndi.gaussian_filter(img3, 3)
@@ -54,7 +68,7 @@ def Count_DAPI_Opt(img3,CellSize=5000,CellSizeMax=30000,fact=1):
         return np.max(labGF)
     else:
         return 0
-def Count_DAPI_Extract_Coords(img3,CellSize=5000,CellSizeMax=30000,fact=1):
+def Count_DAPI_Extract_Coords(img3,CellSize=500,CellSizeMax=30000,fact=1):
 
     imgDen = ndi.gaussian_filter(img3, 3)
     if len(np.unique(imgDen))>1:

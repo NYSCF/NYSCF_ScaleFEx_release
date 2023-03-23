@@ -1,14 +1,9 @@
-
-# from selectors import EpollSelector
-# from cv2 import DRAW_MATCHES_FLAGS_NOT_DRAW_SINGLE_POINTS
-# from grpc import Channel
 import numpy as np
 import matplotlib.pyplot as plt
 import os,glob
 import pandas as pd
 import scipy as sp 
 from scipy import ndimage as ndi
-# from skimage.feature import peak_local_max
 import skimage
 import cv2
 import datetime
@@ -18,14 +13,10 @@ import skimage.feature
 import multiprocessing as mp
 from datetime import datetime
 import skimage.segmentation
-
 import nuclei_location_extraction as nle
-from multiprocessing import set_start_method
-
-import MaskRCNN_Segmentation as mrcnn
 import utils
 import warnings
-import Compute_classes
+import Compute_measurements_functions
 warnings.filterwarnings('ignore')
 
 class ScaleFEx:
@@ -35,7 +26,7 @@ class ScaleFEx:
         Attributes: 
         
         exp_folder = string containing the experiment folder location (eg folder with subfolders of plates), str
-        experiment_name = experiment name (eg HTS00xx), str
+        experiment_name = experiment name (eg ScaleFEx_xx), str
         saving_folder = string containing the destination folder, str 
         Plates = plates IDs to be analysed, as they appear in the pathname, list of strings 
         Channel = channel IDs to be analysed, as they appear in the pathname. NOTE: the nuclei stain has to be the firs channel of the list. list of strings 
@@ -45,7 +36,7 @@ class ScaleFEx:
         mag = magnification, int
         SaveImage = Specify if to save the cropped images as a .npy file. False if not, pathname of saving location if yes
         stack = performs max projection on images if the acquisition mode was multi-stack, Bool
-        CellType = choose between 'Fib' (Fibroblasts), 'IPSC' or 'Neuron'. A different segmentation algorithm is used based on this choice, unless MaskCNN==True. str
+        CellType = choose between 'Fib' (Fibroblasts), 'IPSC' or 'Neuron'. A different segmentation algorithm is used based on this choice. str
         MitoCh = which of the channels is Mitochondria (if any), str
         RNAch = which of the channels is RNA (if any), str
 
@@ -72,10 +63,9 @@ class ScaleFEx:
         self.ROI=int(ROI/downsampling)
         
         ### Reads the Flat Field corrected image if it exists, otherwise it computes it
-
         if not os.path.exists(self.saving_folder+experiment_name+'FFC.p'):
             print('Creating FFC image')
-            files=pd.DataFrame(glob.glob(self.exp_folder+'/*/Images/*.tiff'),columns=['filename'])
+            files=pd.DataFrame(glob.glob(self.exp_folder+'/*/*.tiff'),columns=['filename'])
             self.FFC=utils.FFC_on_data(files,20,self.Channel)
             pickle.dump( self.FFC, open( self.saving_folder+experiment_name+'FFC.p', "wb" ) )
 
@@ -111,14 +101,13 @@ class ScaleFEx:
         
         files=utils.query_data(plate,self.exp_folder)
         Wells,fields=utils.make_well_and_field_list(files)
-        if self.downsampling!=False:
-            csv_file=self.saving_folder+'Vectors/'+self.experiment_name+'_'+str(plate)+'FeatureVector_d'+str(self.downsampling)+'.csv'
-        else:
-            csv_file=self.saving_folder+'Vectors/'+self.experiment_name+'_'+str(plate)+'FeatureVector.csv'
-        flag,indSS,Wells,Site_ex,flag2=utils.check_if_file_exists(csv_file,Wells,fields[-1])
-        self.vector_extraction_Phoen(files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,indSS)  
+        csv_file=self.saving_folder+'FeatureVector/'+self.experiment_name+'_'+str(plate)+'FeatureVector.csv'
+        if not os.path.exists(self.saving_folder+'FeatureVector'):
+            os.makedirs(self.saving_folder+'FeatureVector')
+        flag,ind,Wells,Site_ex,flag2=utils.check_if_file_exists(csv_file,Wells,fields[-1])
+        self.vector_extraction_Phoen(files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,ind)  
 
-    def vector_extraction_Phoen(self,files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,indSS):
+    def vector_extraction_Phoen(self,files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,ind):
        
         if flag!='over':
             for well in Wells:
@@ -191,26 +180,25 @@ class ScaleFEx:
                                         for iii in range(len(np_images)):     
                                             Crop[:,:,iii]=np_images[iii][int(CoM[0]-self.ROI):int(CoM[0]+self.ROI),int(CoM[1]-self.ROI):int(CoM[1]+self.ROI),0]
                                     
-                                        
-                                        fla,Vector=self.single_cell_feature_extraction(Crop,self.Channel,indSS)
-                                        print(fla)
-                                    
+                                        print(CoM)
+                                        fla,Vector=self.single_cell_feature_extraction(Crop,self.Channel)
+                                        Vector.index=[ind]
                                         if fla==True:
                                           
 
-                                            Vector.loc[indSS,'Well']=well
-                                            Vector.loc[indSS,'Site']=site
-                                            Vector.loc[indSS,'Cell_ID']=cn+1
-                                            Vector.loc[indSS,'Cell_Num']=len(CoM2)
-                                            Vector.loc[indSS,'Close_Cell_1']=ccDistance[1]
-                                            Vector.loc[indSS,'Close_Cell_2']=ccDistance[2]
-                                            Vector.loc[indSS,'CoordX']=CoM[0]
-                                            Vector.loc[indSS,'CoordY']=CoM[1]
+                                            Vector.loc[ind,'Well']=well
+                                            Vector.loc[ind,'Site']=site
+                                            Vector.loc[ind,'Cell_ID']=cn+1
+                                            Vector.loc[ind,'Cell_Num']=len(CoM2)
+                                            Vector.loc[ind,'Close_Cell_1']=ccDistance[1]
+                                            Vector.loc[ind,'Close_Cell_2']=ccDistance[2]
+                                            Vector.loc[ind,'CoordX']=CoM[0]
+                                            Vector.loc[ind,'CoordY']=CoM[1]
                      
                                             Vector.to_csv(csv_file[:-4]+'.csv',mode='a',header=flag)
 
                                             flag=False
-                                            indSS+=1
+                                            ind+=1
 
                                                                    
 
@@ -221,25 +209,17 @@ class ScaleFEx:
         else:
             print('plate ',plate, 'is done')
 
-    def single_cell_feature_extraction(self,simg, channels, ind):
+    def single_cell_feature_extraction(self,simg, channels):
 
         ROI=self.ROI
         Lab={}
         regions={}
-        Cat=pd.DataFrame()
+        Cat=pd.DataFrame([[]])
         
         for i in range(len(channels)):
             chan=channels[i]
-            if len(np.unique(simg[:,:,i]))>1:
-                Am = simg[:,:,i] > skimage.filters.threshold_multiotsu(simg[:,:,i])[0]*0.9 
-            else:
-                print('out empty',chan)
-                return False,False
-            
-            Am = ndi.binary_closing(Am, structure=skimage.morphology.disk(2))
-            Am = ndi.binary_fill_holes(Am)
 
-            Lab[i] = skimage.measure.label(Am)
+            Lab[i]=Compute_measurements_functions.compute_primary_mask(simg[:,:,i])
             invMask=Lab[i]<1
             if i==0:
                 nn=Lab[i][self.ROI,self.ROI]
@@ -268,51 +248,53 @@ class ScaleFEx:
             a=simg[:,:,i]*invMask
 
             c=a[a>0]
-            SNR = np.mean(b)/np.std(c)
-            Cat.loc[ind,'SNR_intensity%s' % chan] = SNR
 
+            SNR = np.mean(b)/np.std(c)
+            Cat['SNR_intensity%s' % chan] = SNR
             regions[i] = skimage.measure.regionprops(Lab[i].astype(int))
          
  
             ### Shape
 
-            Cat=pd.concat([Cat,Compute_classes.compute_shape(chan,regions[i],ROI,Lab[i])],axis=1)
+            Cat=pd.concat([Cat,Compute_measurements_functions.compute_shape(chan,regions[i],ROI,Lab[i])],axis=1)
  
             ### Texture
-            Cat=pd.concat([Cat,Compute_classes.iter_Text(chan,simg[:,:,i],Lab[i],ndistance=5,nangles=4)],axis=1)
-            Cat=pd.concat([Cat,Compute_classes.Texture_single_values(Cat,ind,chan,Lab[i],simg[:,:,i])],axis=1)
+            Cat=pd.concat([Cat,Compute_measurements_functions.iter_Text(chan,simg[:,:,i],Lab[i],ndistance=5,nangles=4)],axis=1)
+            Cat=pd.concat([Cat,Compute_measurements_functions.Texture_single_values(chan,Lab[i],simg[:,:,i])],axis=1)
             
         
             # Granularity
 
-            Cat=pd.concat([Cat,Compute_classes.Granularity(chan,simg[:,:,i],n_convolutions=16)],axis=1)
+            Cat=pd.concat([Cat,Compute_measurements_functions.Granularity(chan,simg[:,:,i],n_convolutions=16)],axis=1)
             
             # Intensity
-            Cat=pd.concat([Cat,Compute_classes.Intensity(simg[:,:,i],Lab[i],chan,regions[i])],axis=1)
-        ## Concentric measurements
+            Cat=pd.concat([Cat,Compute_measurements_functions.Intensity(simg[:,:,i],Lab[i],chan,regions[i])],axis=1)
+
+            ## Concentric measurements
+
             scale=8
             if chan == channels[0]:
                 nuc=Cat['MaxRadius_shape'+channels[0]].values[0] * 0.1
             else:
                 nuc=0
-            Cat=pd.concat([Cat,Compute_classes.concentric_measurements(scale,ROI,simg[:,:,i],Lab[i],chan,DAPI=nuc)])
+            Cat=pd.concat([Cat,Compute_measurements_functions.concentric_measurements(scale,ROI,simg[:,:,i],Lab[i],chan,DAPI=nuc)],axis=1)
 
         ## Mitochondria measurements
 
             if chan == self.MitoCh:
-                Cat=pd.concat([Cat,Compute_classes.Mitochondria_measurement(Lab[i],simg[:,:,i],viz=self.viz)])
+                Cat=pd.concat([Cat,Compute_measurements_functions.Mitochondria_measurement(Lab[i],simg[:,:,i],viz=self.viz)],axis=1)
            
         ## RNA measurements
 
             if chan == self.RNAch:
-                Cat=pd.concat([Cat,Compute_classes.RNA_measurement(Lab[i],simg[:,:,i],viz=self.viz)])
+                Cat=pd.concat([Cat,Compute_measurements_functions.RNA_measurement(Lab[0],simg[:,:,i],viz=self.viz)],axis=1)
 
         # Colocalization
 
         for i in range(len(channels)):
             chan=channels[i]
             for j in range(i + 1, len(channels) - 1):
-                Cat=pd.concat([Cat,Compute_classes.Concentric_measurements(simg[:,:,i], simg[:,:,j],chan,channels[j],Lab[i],Lab[j])])
+                Cat=pd.concat([Cat,Compute_measurements_functions.Concentric_measurements(simg[:,:,i], simg[:,:,j],chan,channels[j],Lab[i],Lab[j])],axis=1)
 
         fla=True
         return fla,Cat
