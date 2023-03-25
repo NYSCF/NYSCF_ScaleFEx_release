@@ -80,16 +80,13 @@ def FFC_on_data(files,n_images,Channel):
         FFC[ch]=img
     return FFC
 
-def process_Zstack(image_fnames,Channel,np_images):
-    for ch in Channel:
-        image_fnames = files[0] ### TO BE FIXED ### sorted(glob.glob(+well+'f'+str(site).zfill(2)+'*'+ch+'*.tiff'))
-        imgCh=[]
-        for name in image_fnames:
-            imgCh.append(load_image(name))/FFC[ch]
-        imgCh=np.max(np.asarray(imgCh),axis=0)
-        imgCh=(imgCh/(np.max(imgCh)))*255
-        np_images.append(imgCh.astype('uint8'))
-    return np_images
+def process_Zstack(image_fnames):
+    img = []
+    for name in image_fnames:
+        img.append(load_image(name))
+    img=np.max(np.asarray(img),axis=0)
+
+    return img
 
 def show_cells(images,title=[''],size=3):
 

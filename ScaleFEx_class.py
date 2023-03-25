@@ -130,8 +130,10 @@ class ScaleFEx:
                             for ch in self.Channel:
                                 
                                 image_fnames = files.loc[(files.Well==well) & (files.Site==site) & (files.channel==ch),'file_path'].values[0] 
-                                #print(image_fnames)
-                                img= utils.load_image(image_fnames) 
+                                if self.stack!=True:
+                                    img= utils.load_image(image_fnames) 
+                                else:
+                                    img=utils.process_Zstack(image_fnames)
                                 if ch==self.Channel[0]:
                                     imgNuc=img.copy()
                                 if self.downsampling != 1:
@@ -158,7 +160,8 @@ class ScaleFEx:
                                 CoM2=nle.Count_DAPI_IPSCs(imgNuc)
                             else:
                                 
-                                CoM2=nle.Count_DAPI_Extract_Coords(imgNuc)
+                                CoM2=nle.retrieve_coordinates(nle.compute_DNA_mask(imgNuc),CellSizeMin=100*self.downsampling,CellSizeMax=150000/self.downsampling)  
+
                             try:
                                 CoM2
                             except NameError:
