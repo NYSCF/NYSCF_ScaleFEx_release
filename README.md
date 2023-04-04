@@ -4,4 +4,4 @@ We have developed ScaleFEx, a Python pipeline that extracts multiple generic fix
 ScaleFEx can be used as a powerful tool to understand the underlying phenotypes of complex diseases and subtle drug shifts, bringing us a step forward to identify and characterize morphological differences at single cell level of the major diseases of our time.
 ![Figure1_v0 2](https://user-images.githubusercontent.com/23292813/227660358-ce003906-44c0-49e9-a681-e185d67069e0.png)
 
-ScaleFEx℠ © 2023 by NYSCF is licensed under Business Source License 1.1.
+ScaleFEx℠ Dataset © 2023 by NYSCF is licensed under Business Source License 1.1.
