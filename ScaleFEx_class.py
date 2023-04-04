@@ -60,7 +60,7 @@ class ScaleFEx:
         self.viz=visualization
         self.ROI=int(ROI/downsampling)
         self.min_cell_size=min_cell_size
-        self.max_cell_size=min_cell_size
+        self.max_cell_size=max_cell_size
 
         ### Reads the Flat Field corrected image if it exists, otherwise it computes it
         if not os.path.exists(self.saving_folder+experiment_name+'FFC.p'):
