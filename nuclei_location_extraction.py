@@ -24,7 +24,7 @@ def compute_DNA_mask(DNAimg):
 
     return Lab
 
-def retrieve_coordinates(Lab,CellSizeMin=10, CellSizeMax=150000):
+def retrieve_coordinates(Lab,CellSizeMin=1000, CellSizeMax=50000):
                     
     labGF=skimage.measure.label(Lab)
     for i in range(1,labGF.max()+1):

@@ -33,7 +33,6 @@ class ScaleFEx:
         img_size = x and y size of the image, list of ints
         ROI = half the size of the cropped area around the cell, int
         parallel = use multiprocessing to analyse each plate with a worker, Bool
-        mag = magnification, int
         SaveImage = Specify if to save the cropped images as a .npy file. False if not, pathname of saving location if yes
         stack = performs max projection on images if the acquisition mode was multi-stack, Bool
         CellType = choose between 'Fib' (Fibroblasts), 'IPSC' or 'Neuron'. A different segmentation algorithm is used based on this choice. str
@@ -45,11 +44,10 @@ class ScaleFEx:
     
     
     def __init__(self,exp_folder,experiment_name='EXP',saving_folder='~/ScaleFEx_results/',Plates=['1','2','3','4','5'],
-                 Channel=['ch4','ch1','ch2','ch3','ch5'],img_size=[2160,2160],ROI=299,parallel=True,SaveImage=False,stack=False, mag=40, CellType='Fib',
+                 Channel=['ch4','ch1','ch2','ch3','ch5'],img_size=[2160,2160],ROI=299,parallel=True,SaveImage=False,stack=False, min_cell_size=False, max_cell_size=False, CellType='Fib',
                  MitoCh='ch2',RNAch='ch5',downsampling=1,visualization=False):
        
         self.stack=stack
-        self.mag=mag
         self.CellType=CellType
         self.exp_folder=exp_folder
         self.saving_folder=saving_folder
@@ -61,7 +59,9 @@ class ScaleFEx:
         self.downsampling=downsampling
         self.viz=visualization
         self.ROI=int(ROI/downsampling)
-        
+        self.min_cell_size=min_cell_size
+        self.max_cell_size=min_cell_size
+
         ### Reads the Flat Field corrected image if it exists, otherwise it computes it
         if not os.path.exists(self.saving_folder+experiment_name+'FFC.p'):
             print('Creating FFC image')
@@ -160,7 +160,7 @@ class ScaleFEx:
                                 CoM2=nle.Count_DAPI_IPSCs(imgNuc)
                             else:
                                 
-                                CoM2=nle.retrieve_coordinates(nle.compute_DNA_mask(imgNuc),CellSizeMin=100*self.downsampling,CellSizeMax=150000/self.downsampling)  
+                                CoM2=nle.retrieve_coordinates(nle.compute_DNA_mask(imgNuc),CellSizeMin=self.min_cell_size*self.downsampling,CellSizeMax=self.max_cell_size/self.downsampling)  
 
                             try:
                                 CoM2
@@ -297,7 +297,7 @@ class ScaleFEx:
         for i in range(len(channels)):
             chan=channels[i]
             for j in range(i + 1, len(channels) - 1):
-                Cat=pd.concat([Cat,Compute_measurements_functions.Concentric_measurements(simg[:,:,i], simg[:,:,j],chan,channels[j],Lab[i],Lab[j])],axis=1)
+                Cat=pd.concat([Cat,Compute_measurements_functions.Correlation_measurements(simg[:,:,i], simg[:,:,j],chan,channels[j],Lab[i],Lab[j])],axis=1)
 
         fla=True
         return fla,Cat

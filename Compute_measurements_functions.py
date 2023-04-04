@@ -336,7 +336,7 @@ def RNA_measurement(Lab,simg,viz=False):
         df['RNAMedianDistance'] = 0
     return df
 
-def Concentric_measurements(simgi, simgj,chan,chanj,Labi,Labj):
+def Correlation_measurements(simgi, simgj,chan,chanj,Labi,Labj):
     df=pd.DataFrame([[]])
     Cor = np.nanmean(np.corrcoef(simgi, simgj))
     df['Correlation_%s' % chan + '_' + chanj] = Cor
