@@ -44,11 +44,10 @@ class ScaleFEx:
     
     
     def __init__(self,exp_folder,experiment_name='EXP',saving_folder='~/ScaleFEx_results/',Plates=['1','2','3','4','5'],
-                 Channel=['ch4','ch1','ch2','ch3','ch5'],img_size=[2160,2160],ROI=299,parallel=True,SaveImage=False,stack=False, min_cell_size=False, max_cell_size=False, CellType='Fib',
+                 Channel=['ch4','ch1','ch2','ch3','ch5'],img_size=[2160,2160],ROI=299,parallel=True,SaveImage=False,stack=False, min_cell_size=False, max_cell_size=False, 
                  MitoCh='ch2',RNAch='ch5',downsampling=1,visualization=False):
        
         self.stack=stack
-        self.CellType=CellType
         self.exp_folder=exp_folder
         self.saving_folder=saving_folder
         self.Channel=Channel
@@ -107,6 +106,7 @@ class ScaleFEx:
         flag,ind,Wells,Site_ex,flag2=utils.check_if_file_exists(csv_file,Wells,fields[-1])
         self.vector_extraction_Phoen(files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,ind)  
 
+
     def vector_extraction_Phoen(self,files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,ind):
        
         if flag!='over':
@@ -154,20 +154,16 @@ class ScaleFEx:
                             np_images = np.array(np_images)
                             np_images = np.expand_dims(np_images, axis=3)
                             scale=1
-                            if self.CellType=='Neuron':
-                                CoM2=nle.Count_DAPI_Neurons_Coords(imgNuc)
-                            if self.CellType=='iPSC':
-                                CoM2=nle.Count_DAPI_IPSCs(imgNuc)
-                            else:
+                            
                                 
-                                CoM2=nle.retrieve_coordinates(nle.compute_DNA_mask(imgNuc),CellSizeMin=self.min_cell_size*self.downsampling,CellSizeMax=self.max_cell_size/self.downsampling)  
+                            CoM2=nle.retrieve_coordinates(nle.compute_DNA_mask(imgNuc),CellSizeMin=self.min_cell_size*self.downsampling,CellSizeMax=self.max_cell_size/self.downsampling)  
 
                             try:
                                 CoM2
                             except NameError:
                                 CoM2 = [] 
                                 print('No Cells detected')
-                                
+                              
                             if len(CoM2)>2:
                                 
                                 for cn,CoM in enumerate(CoM2):
@@ -183,7 +179,7 @@ class ScaleFEx:
                                         for iii in range(len(np_images)):     
                                             Crop[:,:,iii]=np_images[iii][int(CoM[0]-self.ROI):int(CoM[0]+self.ROI),int(CoM[1]-self.ROI):int(CoM[1]+self.ROI),0]
                                     
-                                        print(CoM)
+                                     
                                         fla,Vector=self.single_cell_feature_extraction(Crop,self.Channel)
                                         Vector.index=[ind]
                                         if fla==True:
@@ -223,21 +219,25 @@ class ScaleFEx:
             chan=channels[i]
 
             Lab[i]=Compute_measurements_functions.compute_primary_mask(simg[:,:,i])
-            invMask=Lab[i]<1
+            
             if i==0:
                 nn=Lab[i][self.ROI,self.ROI]
                 Lab[i]=Lab[i]==nn
 
             else:
-                nn=Lab[i]*ndi.binary_dilation(Lab[0], structure=skimage.morphology.disk(int(100/self.downsampling)))
+                nn=Lab[i][int(self.ROI/2):int(self.ROI*(3/2)),int(self.ROI/2):int(self.ROI*(3/2))]
+                #nn=Lab[i]*ndi.binary_dilation(Lab[0], structure=skimage.morphology.disk(int(100/self.downsampling)))
                
                 try:
                     nn=np.bincount(nn[nn>0]).argmax()
                 except:
-                    print('out except')
+                    print('out except for size inconsistency')
                     return False,False
           
                 Lab[i] = Lab[i] == nn
+
+            invMask=Lab[i]<1
+
             if self.viz==True:
                 utils.show_cells([simg[:,:,i],Lab[i]],title=[chan +'_'+str(i),'mask'])
 
