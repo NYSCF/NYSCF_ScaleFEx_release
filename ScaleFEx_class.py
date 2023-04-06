@@ -82,7 +82,7 @@ class ScaleFEx:
             for plate in Plates:
                 
                 p = mp.Process(target=self.cascade_functions, args=(plate,))
-                #self.cascade_functions(plate)
+                
                 processes.append(p)
                 p.start()
                 # p.join()
@@ -97,7 +97,7 @@ class ScaleFEx:
 
                
     def cascade_functions(self,plate):
-        
+        ''' Function that calls all the functions to compute single cell fixed features on all the images within a plate'''
         files=utils.query_data(plate,self.exp_folder)
         Wells,fields=utils.make_well_and_field_list(files)
         csv_file=self.saving_folder+'FeatureVector/'+self.experiment_name+'_'+str(plate)+'FeatureVector.csv'
@@ -108,7 +108,7 @@ class ScaleFEx:
 
 
     def vector_extraction_Phoen(self,files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,ind):
-       
+        ''' Function that imports the images and extracts the location of cells'''
         if flag!='over':
             for well in Wells:
                 print(well,plate,datetime.now())
@@ -120,42 +120,36 @@ class ScaleFEx:
                         print(site,well, plate,datetime.now())
                         Vector=pd.DataFrame()
                     
-                                            
-                        #images=np.zeros((self.img_size[0],self.img_size[1],len(self.Channel)))
                         np_images = []
-                        if self.stack==True:
-                            np_images=utils.process_Zstack(image_fnames,self.Channel,np_images)
-                        else:
-                            corrupt=False
-                            for ch in self.Channel:
+                        corrupt=False
+                        for ch in self.Channel:
+                            
+                            image_fnames = files.loc[(files.Well==well) & (files.Site==site) & (files.channel==ch),'file_path'].values[0] 
+                            if self.stack!=True:
+                                img= utils.load_image(image_fnames) 
+                            else:
+                                img=utils.process_Zstack(image_fnames)
+                            if ch==self.Channel[0]:
+                                imgNuc=img.copy()
+                            if self.downsampling != 1:
+                                img=cv2.resize(img,self.img_size)
                                 
-                                image_fnames = files.loc[(files.Well==well) & (files.Site==site) & (files.channel==ch),'file_path'].values[0] 
-                                if self.stack!=True:
-                                    img= utils.load_image(image_fnames) 
-                                else:
-                                    img=utils.process_Zstack(image_fnames)
-                                if ch==self.Channel[0]:
-                                    imgNuc=img.copy()
-                                if self.downsampling != 1:
-                                    img=cv2.resize(img,self.img_size)
-                                    
-                                if (img is not None) and (img.shape[0]==self.img_size[0]) and (img.shape[1]==self.img_size[1]): #Check that the image is of the right format
-                                    #if ch!='ch6':
-                                    img=img/self.FFC[ch]
-                                    
-                                    img=(img/(np.max(img))) * 255
-                                    np_images.append(img.astype('uint8'))
-                                   
-                                else:
-                                    corrupt=True
-                                    print('Img corrupted')
+                            if (img is not None) and (img.shape[0]==self.img_size[0]) and (img.shape[1]==self.img_size[1]): #Check that the image is of the right format
+                                img=img/self.FFC[ch]
+                                
+                                img=(img/(np.max(img))) * 255
+                                np_images.append(img.astype('uint8'))
+                                
+                            else:
+                                corrupt=True
+                                print('Img corrupted')
 
                         if corrupt==False:   
                             np_images = np.array(np_images)
                             np_images = np.expand_dims(np_images, axis=3)
                             scale=1
                             
-                                
+                            #extraction of the location of the cells    
                             CoM2=nle.retrieve_coordinates(nle.compute_DNA_mask(imgNuc),CellSizeMin=self.min_cell_size*self.downsampling,CellSizeMax=self.max_cell_size/self.downsampling)  
 
                             try:

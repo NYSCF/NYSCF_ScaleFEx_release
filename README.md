@@ -4,4 +4,18 @@ We have developed ScaleFEx, a Python pipeline that extracts multiple generic fix
 ScaleFEx can be used as a powerful tool to understand the underlying phenotypes of complex diseases and subtle drug shifts, bringing us a step forward to identify and characterize morphological differences at single cell level of the major diseases of our time.
 ![Figure1_v0 2](https://user-images.githubusercontent.com/23292813/227660358-ce003906-44c0-49e9-a681-e185d67069e0.png)
 
+To see an example on how to launch and set ScaleFEx over the entire plate experiment, use
+    ComputeScaleFEx.py
+
+To visualize the masks of single cell's channels while computing ScaleFEx on a small provided example field, open 
+    Example_notebook_ScaleFEx.ipynb
+Note that since the output is provided in the folder, the function will check if that field has been already calculated and won't re-compute the files. To start a new computation delete the current output
+
+The example site is provided in the "data" folder
+ScaleFEx_class.py is the main function called to generate the computations. It calls all of the other functions to query the data, do pre processing, segmentation, and finally feature extraction
+In the ComputeScaleFEx.py file are contained all the functions that compute the class of neasurements
+utils.py contains the functions used to process and query the data
+nuclei_location_extraction.py contains the functions to perform segmentation and nuclei coordinate extraction. 
+All the necessary packages can be installed via the ScaleFEx_env.yml file
+
 ScaleFEx℠ Dataset © 2023 by NYSCF is licensed under Business Source License 1.1.

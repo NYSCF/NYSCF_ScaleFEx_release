@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 
 
 def query_data(plate,exp_folder):
+    ''' Queries the data from the folders and extracts wells, sites and channels. This is the main function
+        to be changed if the user's has the files arranged in a different way. 
+        The output is a dataframe that contains well, site, channel, file name and file path of each image '''
+
     files= glob.glob(exp_folder+'*'+plate+'*/*.tiff')
     files.sort()
     files=pd.DataFrame(files,columns=['file_path'])
@@ -17,7 +21,7 @@ def query_data(plate,exp_folder):
 
 
 def make_well_and_field_list(files):
-    
+    ''' inspects the image file name and extracts the unique fields and wells to loop over'''
     Wells=np.unique(files.Well)
     Wells.sort()
     fields=np.unique(files.Site)
@@ -25,7 +29,9 @@ def make_well_and_field_list(files):
     return Wells,fields
 
 def check_if_file_exists(csv_file,Wells,last_field):
-
+    ''' Checks if a file for the plate and experiment exists. if it does, if checks what is the last well and field that was calculated.
+        If it equals the last available well and field, it considers the computation over, otherwise it extracts where is stops and takes over 
+        from there '''
     Site_ex=1
     flag2=False
     if os.path.exists(csv_file):
@@ -37,7 +43,7 @@ def check_if_file_exists(csv_file,Wells,last_field):
         Site_ex=Vector.Site[Vector.index[-1]]
 
         if (lastWell==Wells[-1]) and (Site_ex==last_field):
-            return 'over', ind,Wells,Site_ex,True
+            return 'The computation is over', ind,Wells,Site_ex,True
 
         Wells=Wells[np.where(Wells==lastWell)[0][0]:]
 
@@ -69,6 +75,7 @@ def load_image(file_path):
 
 
 def FFC_on_data(files,n_images,Channel):
+    '''It calculates the background trend of the entire experiment to be used for flat field correction'''
     FFC={}
     for ch in Channel:
         
@@ -81,6 +88,7 @@ def FFC_on_data(files,n_images,Channel):
     return FFC
 
 def process_Zstack(image_fnames):
+    ''' Computes the stack's max projection from the image neame'''
     img = []
     for name in image_fnames:
         img.append(load_image(name))
@@ -89,7 +97,7 @@ def process_Zstack(image_fnames):
     return img
 
 def show_cells(images,title=[''],size=3):
-
+    ''' Function to visualize  images in a compact way '''
     _,ax=plt.subplots(1,len(images),figsize=(int(size*len(images)),size))
     if len(images)>1:
         for i in range(len(images)):
