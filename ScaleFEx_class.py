@@ -104,10 +104,10 @@ class ScaleFEx:
         if not os.path.exists(self.saving_folder+'FeatureVector'):
             os.makedirs(self.saving_folder+'FeatureVector')
         flag,ind,Wells,Site_ex,flag2=utils.check_if_file_exists(csv_file,Wells,fields[-1])
-        self.vector_extraction_Phoen(files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,ind)  
+        self.load_preprocess_and_compute_feature(files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,ind)  
 
 
-    def vector_extraction_Phoen(self,files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,ind):
+    def load_preprocess_and_compute_feature(self,files,plate,Wells,Site_ex,flag2,fields,csv_file,flag,ind):
         ''' Function that imports the images and extracts the location of cells'''
         if flag!='over':
             for well in Wells:
