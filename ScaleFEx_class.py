@@ -175,10 +175,10 @@ class ScaleFEx:
                                     
                                      
                                         fla,Vector=self.single_cell_feature_extraction(Crop,self.Channel)
-                                        Vector.index=[ind]
+                                        
                                         if fla==True:
                                           
-
+                                            Vector.index=[ind]
                                             Vector.loc[ind,'Well']=well
                                             Vector.loc[ind,'Site']=site
                                             Vector.loc[ind,'Cell_ID']=cn+1
@@ -195,10 +195,7 @@ class ScaleFEx:
 
                                                                    
 
-                            else:
-                                flag=False
-                        else:
-                                flag=False
+                          
         else:
             print('plate ',plate, 'is done')
 
