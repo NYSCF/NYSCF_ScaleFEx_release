@@ -15,9 +15,8 @@ def compute_DNA_mask(DNAimg):
         Lab: labelled image of the segmented cells
         '''
     
-    Am = DNAimg > skimage.filters.threshold_li(DNAimg)
-
-    Am = ndi.binary_opening(Am, structure=skimage.morphology.disk(3),iterations=1)
+    Am = DNAimg > skimage.filters.threshold_triangle(DNAimg)*5
+    Am = ndi.binary_erosion(Am, structure=skimage.morphology.disk(3),iterations=2)
     Am = ndi.binary_fill_holes(Am)
 
     Lab = skimage.measure.label(Am)
