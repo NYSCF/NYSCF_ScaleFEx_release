@@ -45,7 +45,7 @@ class ScaleFEx:
 
     """
 
-    def __init__(self, exp_folder, experiment_name='EXP', saving_folder='~/ScaleFEx_results/',
+    def __init__(self, exp_folder, experiment_name='EXP', saving_folder='~/output/',
                  plates=['1', '2', '3', '4', '5'], channel=['ch4', 'ch1', 'ch2', 'ch3', 'ch5'],
                  img_size=[2160, 2160], parallel=True, save_image=False, stack=False,
                  min_cell_size=False, max_cell_size=False, mito_ch='ch2', rna_ch='ch5',
@@ -66,19 +66,19 @@ class ScaleFEx:
         self.max_cell_size = max_cell_size
 
         # Reads the Flat Field corrected image if it exists, otherwise it computes it
-        if not os.path.exists(self.saving_folder+experiment_name+'flat_field_correction.p'):
+        if not os.path.exists(self.saving_folder+experiment_name+'FFC.p'):
             print('Creating flat_field_correction image')
             files = pd.DataFrame(
                 glob.glob(self.exp_folder+'/*/*.tiff'), columns=['filename'])
             self.flat_field_correction = utils.flat_field_correction_on_data(
                 files, 20, self.channel)
             pickle.dump(self.flat_field_correction, open(self.saving_folder +
-                        experiment_name+'flat_field_correction.p', "wb"))
+                        experiment_name+'FFC.p', "wb"))
 
         else:
             print('Loading flat_field_correction image')
             self.flat_field_correction = pickle.load(
-                open(self.saving_folder+experiment_name+'flat_field_correction.p', "rb"))
+                open(self.saving_folder+experiment_name+'FFC.p', "rb"))
 
         self.img_size = [int(img_size[0]/downsampling),
                          int(img_size[1]/downsampling)]
@@ -194,7 +194,8 @@ class ScaleFEx:
                                     if self.save_image:
                                         np.save(
                                             self.save_image+plate+well+site+str(cn)+'.npy', np_images)
-                                    for iii,_ in enumerate(len(np_images)):
+                                    
+                                    for iii,_ in enumerate(np_images):
                                         cell_crop[:, :, iii] = np_images[iii][int(
                                             com[0]-self.roi):int(com[0]+self.roi), int(com[1]-self.roi):int(com[1]+self.roi), 0]
 

@@ -5,7 +5,7 @@ import ScaleFEx_class
 PATH_TO_IMAGES = '~/data/'
 # The structure would be /folder_path/experiment_name*Plate_n*/r01c01f01-ch1*.tif
 # folder where the csv containing the measurements is saved
-SAVING_FOLDER = '/~/HCI_Projects/'
+SAVING_FOLDER = '/~/FeatureVector/'
 # It will create a folder called 'FeatureVector' in the saving folder
 EXPERIMENT_NAME = 'ScaleFEX'  # experiment name, it will look for it in the filepath
 # Plate names, it will look for it in the filepath
