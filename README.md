@@ -4,18 +4,44 @@ We have developed ScaleFEx, a Python pipeline that extracts multiple generic fix
 ScaleFEx can be used as a powerful tool to understand the underlying phenotypes of complex diseases and subtle drug shifts, bringing us a step forward to identify and characterize morphological differences at single cell level of the major diseases of our time.
 ![Figure1_v0 2](https://user-images.githubusercontent.com/23292813/227660358-ce003906-44c0-49e9-a681-e185d67069e0.png)
 
-To see an example on how to launch and set ScaleFEx over the entire plate experiment, use
+A preprint is available [here]
+Download the downsamples (from 2160x2160 to 540x540) imaging dataset [here](https://nyscfopensource.blob.core.windows.net/scalefex/ScaleFEx.zip). NOTE that the size of the imaging dataset is 142 GBs
+Download the pre-computed ScaleFEx data [here](https://nyscfopensource.blob.core.windows.net/scalefex/ScaleFex_computed_normalized.csv)
+NOTE that the size of the csv containing the computed vector is 13.2 GBs
+If interested in the full-sized dataset, please email the authors at bmigliori@nyscf.org
+
+To see an example on how to launch and set ScaleFEx over the entire plate experiment, open
     ComputeScaleFEx.py
+and change the variables to reflect you paths and experiment type.
 
 To visualize the masks of single cell's channels while computing ScaleFEx on a small provided example field, open 
     Example_notebook_ScaleFEx.ipynb
 Note that since the output is provided in the folder, the function will check if that field has been already calculated and won't re-compute the files. To start a new computation delete the current output
 
-The example site is provided in the "data" folder
+The example field is provided in the "data" folder
 ScaleFEx_class.py is the main function called to generate the computations. It calls all of the other functions to query the data, do pre processing, segmentation, and finally feature extraction
-In the ComputeScaleFEx.py file are contained all the functions that compute the class of neasurements
+In the ComputeScaleFEx.py file are contained all the functions that compute the class of measurements
 utils.py contains the functions used to process and query the data
 nuclei_location_extraction.py contains the functions to perform segmentation and nuclei coordinate extraction. 
-All the necessary packages can be installed via the ScaleFEx_env.yml file
+
+ScaleFEx depends on the use of Anaconda which can be downloaded [here](https://www.anaconda.com/products/distribution)
+1. Create and activate a conda environment with a modern python version:
+	```
+	conda create -n foca python=3.8.10 pip
+	conda activate ScaleFEx
+	```
+2. Install the required libraries:
+	```
+	pip install -r requirements.txt
+	```
+3. Update parameters in [`input/config.py`](https://github.com/NYSCF/foca_release/blob/main/input/config.py)
+
+4. Run tests in project root directory to ensure the parameters entered are valid:
+	```
+	pytest
+	```
+
+To see an example of the analysis, run Scale_Fex_analysis.ipynb. 
+Note that a seed was not fixed for the analysis that rely on randomness, therefore some results might differ slightly from the ones in the manuscript
 
 ScaleFEx℠ Dataset © 2023 by NYSCF is licensed under Business Source License 1.1.

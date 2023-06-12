@@ -6,10 +6,12 @@ __pycache__/
 *.vscode
 *.git
 *.ipynb_checkpoints
-
+ScaleFex_Paper_normalized.csv
 # C extensions
 *.so
-
+ScaleFEx/
+ScaleFEx.zip
+ScaleFex_computed_normalized.csv
 # Distribution / packaging
 .Python
 build/

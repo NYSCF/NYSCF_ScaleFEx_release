@@ -71,7 +71,7 @@ class ScaleFEx:
             files = pd.DataFrame(
                 glob.glob(self.exp_folder+'/*/*.tiff'), columns=['filename'])
             self.flat_field_correction = utils.flat_field_correction_on_data(
-                files, 20, self.channel)
+                files, 200, self.channel)
             pickle.dump(self.flat_field_correction, open(self.saving_folder +
                         experiment_name+'FFC.p', "wb"))
 
@@ -140,7 +140,7 @@ class ScaleFEx:
                     for ch in self.channel:
 
                         image_fnames = files.loc[(files.Well == well) & (
-                            files.Site == site) & (files.channel == ch), 'file_path'].values[0]
+                            files.Site == site) & (files.channel == ch), 'file_path'].values
                         if self.stack is not True:
                             img = utils.load_image(image_fnames)
                         else:
