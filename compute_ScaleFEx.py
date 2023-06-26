@@ -12,7 +12,7 @@ EXPERIMENT_NAME = 'ScaleFEX'  # experiment name, it will look for it in the file
 plates = ['Plate1', 'Plate2', 'Plate3', 'Plate4', 'Plate5']
 ROI = 150  # radius to define the crop-size
 # channels to be analysed and in that order.
-channels = ['ch4', 'ch1', 'ch2', 'ch3', 'ch5']
+CHANNELS = ['ch4', 'ch1', 'ch2', 'ch3', 'ch5']
 # DNA should be first as it defines the center of the crop
 # Mitochondria channel. If you don't want to compute the Mito fearues, put ''
 MITO_CHANNEL = 'ch2'
@@ -30,7 +30,7 @@ MAX_CELL_SIZE = 500000  # max area in pixels for nuclei segmentation
 MIN_CELL_SIZE = 1000
 
 ScaleFEx_class.ScaleFEx(PATH_TO_IMAGES, saving_folder=SAVING_FOLDER,experiment_name=EXPERIMENT_NAME,
-                        plates=plates, Channel=channels, ROI=ROI, visualization=VISUALIZATION,
-                        img_size=image_size, parallel=PARALLEL, SaveImage=SAVE_IMAGE, stack=STACK,
-                        MitoCh=MITO_CHANNEL, RNAch=RNA_CHANNEL, downsampling=DOWNSAMPLING,
+                        plates=plates, channel=CHANNELS, roi=ROI, visualization=VISUALIZATION,
+                        img_size=image_size, parallel=PARALLEL, save_image=SAVE_IMAGE, stack=STACK,
+                        mito_ch=MITO_CHANNEL, rna_ch=RNA_CHANNEL, downsampling=DOWNSAMPLING,
                         max_cell_size=MAX_CELL_SIZE, min_cell_size=MIN_CELL_SIZE)
