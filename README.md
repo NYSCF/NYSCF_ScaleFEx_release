@@ -44,12 +44,7 @@ ScaleFEx depends on the use of Anaconda which can be downloaded [here](https://w
 	```
 	pip install -r requirements.txt
 	```
-3. Update parameters in [`input/config.py`](https://github.com/NYSCF/foca_release/blob/main/input/config.py)
 
-4. Run tests in project root directory to ensure the parameters entered are valid:
-	```
-	pytest
-	```
 
 
 
