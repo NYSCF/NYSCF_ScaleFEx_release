@@ -3,9 +3,10 @@
 We have developed ScaleFEx, a Python pipeline that extracts multiple generic fixed features at the single cell level that can be deployed across large high-content imaging datasets with low computation requirements. 
 This pipeline efficiently and reliably computes features related to shape, size, intensity, texture, granularity as well as correlations between channels. Additionally, it allows the measurement of additional features specifically related to mitochondria and RNA only, as they represent important channels with characteristics worth to be measured on their own. The measured features can be used to not only separate populations of cells using AI tools, but also  highlight the specific interpretable features that differ between populations. The authors used ScaleFEx to identify the phenotypic shifts that multiple cell lines undergo when exposed to different compounds. We used a combination of Recursive Feature Elimination, Logistic regression, correlation analysis and dimensionality reduction representations to narrow down to the most meaningful features that described the drug shifts. Furthermore, we used the best scoring features to extract images of cells for each class closest to the average to visually highlight the phenotypic shifts caused by the drugs. Using this approach we were able to identify features linked to the drug shifts in line with literature, and we could visually validate their involvement in the morphological changes of the cells. 
 ScaleFEx can be used as a powerful tool to understand the underlying phenotypes of complex diseases and subtle drug shifts, bringing us a step forward to identify and characterize morphological differences at single cell level of the major diseases of our time.
-![Figure1_v0 2](https://user-images.githubusercontent.com/23292813/227660358-ce003906-44c0-49e9-a681-e185d67069e0.png)
+![Figure1_v0 2](https://github.com/NYSCF/NYSCF_ScaleFEx_release/assets/23292813/496f92e7-ac4a-4b5f-a65f-0d2503bc8968)
 
-**A preprint is available [here]**
+
+**A preprint is available [here] (https://www.biorxiv.org/content/10.1101/2023.07.06.547985v1) **
 
 **Download the downsamples (from 2160x2160 to 540x540) imaging dataset [here](https://nyscfopensource.blob.core.windows.net/scalefex/ScaleFEx.zip).**
 
@@ -37,13 +38,21 @@ To see an example of the analysis, run **Scale_Fex_analysis.ipynb**.
 ScaleFEx depends on the use of Anaconda which can be downloaded [here](https://www.anaconda.com/products/distribution)
 1. Create and activate a conda environment with a modern python version:
 	```
-	conda create -n foca python=3.8.10 pip
+	conda create -n ScaleFEx python=3.8.10 pip
 	conda activate ScaleFEx
 	```
 2. Install the required libraries:
 	```
 	pip install -r requirements.txt
 	```
+## Citation:
+If you find this repository useful for your research, please consider giving us a star ⭐ and cite our [bioRxiv](https://www.biorxiv.org/content/10.1101/2023.07.06.547985v1) paper:
+
+	
+ 	ScaleFExSM: a lightweight and scalable method to extract fixed features from single cells in high-content imaging screens
+	Bianca Migliori, Neeloy Bose, Daniel Paull
+	bioRxiv 2023.07.06.547985; doi: https://doi.org/10.1101/2023.07.06.547985
+	
 
 
 
