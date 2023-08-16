@@ -6,12 +6,12 @@ import ScaleFEx_on_prem_class
 
 
 # Data path of the images.The code will look for a folder per experiment
-PATH_TO_IMAGES = '/media/biancamigliori/2e6952d2-a327-41fa-9451-7ce13129d27c/HTS0033'
+PATH_TO_IMAGES = '~/data/'
 # The structure would be /folder_path/experiment_name*Plate_n*/r01c01f01-ch1*.tif
 
 ROI = 150  # radius to define the crop-size
 # channels to be analysed and in that order.
-channels = ['ch4','ch1','ch3','ch5','ch2']
+channels = ['ch1','ch2','ch3','ch4','ch5']
 # DNA should be first as it defines the center of the crop
 # Mitochondria channel. If you don't want to compute the Mito fearues, put ''
 MITO_CHANNEL = 'ch2'
@@ -34,10 +34,10 @@ def ScaleFEx_Main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-e', '--experiment', # the experiment name is used for path finding
 						help="experiment's name to be processed ex: 'ScaleFEX'",
-                        default="HTS0033")
+                        default="ScaleFEX")
     parser.add_argument('-p', '--plate', # put here all the plates you want to analyze in square brackets
 						help="plate ID if only one plate is to be processed ex: ['Plate1']",
-                        default=['101'])
+                        default=['Plate1','Plate2','Plate3','Plate4','Plate5'])
     parser.add_argument('-r', '--ressource', # specify weather the computation happends locally or on AWS servers
 						help="whether you want to use your machine or AWS. options: 'cloud' or 'on premise",
 						default="on premise")
@@ -62,7 +62,7 @@ def ScaleFEx_Main():
         
     else:
         print(RESSOURCE)
-        SAVING_FOLDER = '/home/biancamigliori/Documents/HCI_Projects/GBA/'
+        SAVING_FOLDER = '/~/FeatureVector/'
         CSV_COORDINATES='' # insert here the path to a CSV containing the coordinates of the cells to be analyzed. If empty, the segmentation method will locate the cells
         ScaleFEx_on_prem_class.ScaleFEx(PATH_TO_IMAGES, saving_folder=SAVING_FOLDER,experiment_name=EXPERIMENT_NAME,
                         plates=PLATE, channel=channels, roi=ROI, visualization=VISUALIZATION,
