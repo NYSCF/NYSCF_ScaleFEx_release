@@ -41,11 +41,15 @@ def retrieve_coordinates(label, cell_size_min=1000, cell_size_max=50000):
         center_of_mass: coordinates of the Center of Mass of the segmented objects, list. 
              Length is the number of objets, width is 2 (X and Y coordinates)
          '''
+  
     label_gf = skimage.measure.label(label)
+
     for i in range(1, label_gf.max()+1):
+        
         if (np.count_nonzero(label_gf == i) < cell_size_min or 
             np.count_nonzero(label_gf == i) > cell_size_max):
             label_gf[label_gf == i] = 0
+            print('Nucleus out of range')
     labels = skimage.measure.label(label_gf)
     center_of_mass = np.zeros((label_gf.max(), 2))
     for num in np.arange(np.max(labels)):
