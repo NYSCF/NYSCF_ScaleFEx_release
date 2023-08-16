@@ -6,12 +6,12 @@ import ScaleFEx_on_prem_class
 
 
 # Data path of the images.The code will look for a folder per experiment
-PATH_TO_IMAGES = '~/data/'
+PATH_TO_IMAGES = '/media/biancamigliori/2e6952d2-a327-41fa-9451-7ce13129d27c/HTS0033'
 # The structure would be /folder_path/experiment_name*Plate_n*/r01c01f01-ch1*.tif
 
 ROI = 150  # radius to define the crop-size
 # channels to be analysed and in that order.
-channels = ['ch1','ch2','ch3','ch4']
+channels = ['ch4','ch1','ch3','ch5','ch2']
 # DNA should be first as it defines the center of the crop
 # Mitochondria channel. If you don't want to compute the Mito fearues, put ''
 MITO_CHANNEL = 'ch2'
@@ -19,25 +19,25 @@ RNA_CHANNEL = 'ch5'   # RNA channel. If you don't want to compute the RNA fearue
 NEURON_CHANNEL='' # Neuron channel. Computes neuritis length, nodes and If you don't want to compute the RNA fearues, put ''
 image_size = [2160, 2160]  # X-Y image size
 DOWNSAMPLING = 1  # downsampling ratio
-# parallelization flag. If True, it will parallelize the computation over 6 workers
-PARALLEL = False
+
 # Visualizatin flag: change it to True if you want to see all the computed masks
 VISUALIZATION = False
 SAVE_IMAGE = False  # Put True if you want to save the crops as .npy in a folder
 STACK = False  # Indicate here if the images were acquired in stacks
-MAX_CELL_SIZE = 100000  # max area in pixels for nuclei segmentation
+MAX_CELL_SIZE = 50000  # max area in pixels for nuclei segmentation
 # min area in pixels for nuclei segmentation. These values are set for a 40X image of size 2160x2160
-MIN_CELL_SIZE = 5000
+MIN_CELL_SIZE = 1000
 
-MAX_PROCESSES=100 # number of processes to use to parallelize the computation
+MAX_PROCESSES=1 # number of processes to use to parallelize the computation
+
 def ScaleFEx_Main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-e', '--experiment', # the experiment name is used for path finding
 						help="experiment's name to be processed ex: 'ScaleFEX'",
-                        default="ScaleFEX")
+                        default="HTS0033")
     parser.add_argument('-p', '--plate', # put here all the plates you want to analyze in square brackets
 						help="plate ID if only one plate is to be processed ex: ['Plate1']",
-                        default=['Plate1', 'Plate2', 'Plate3', 'Plate4', 'Plate5'])
+                        default=['101'])
     parser.add_argument('-r', '--ressource', # specify weather the computation happends locally or on AWS servers
 						help="whether you want to use your machine or AWS. options: 'cloud' or 'on premise",
 						default="on premise")
@@ -56,13 +56,13 @@ def ScaleFEx_Main():
         CSV_COORDINATES='' # insert here the path to a CSV containing the coordinates of the cells to be analyzed. If empty, the segmentation method will locate the cells
         ScaleFEx_cloud_class.ScaleFEx(RESSOURCE,PATH_TO_IMAGES, saving_folder=SAVING_FOLDER,experiment_name=EXPERIMENT_NAME,
                         plate=PLATE, channel=channels, roi=ROI, visualization=VISUALIZATION,
-                        img_size=image_size, parallel=PARALLEL, save_image=SAVE_IMAGE, stack=STACK,
+                        img_size=image_size, save_image=SAVE_IMAGE, stack=STACK,
                         mito_ch=MITO_CHANNEL, rna_ch=RNA_CHANNEL, downsampling=DOWNSAMPLING,
                         max_cell_size=MAX_CELL_SIZE, min_cell_size=MIN_CELL_SIZE, location_csv=CSV_COORDINATES,bucket='nyscf-feature-vector')
         
     else:
         print(RESSOURCE)
-        SAVING_FOLDER = '/~/FeatureVector/'
+        SAVING_FOLDER = '/home/biancamigliori/Documents/HCI_Projects/GBA/'
         CSV_COORDINATES='' # insert here the path to a CSV containing the coordinates of the cells to be analyzed. If empty, the segmentation method will locate the cells
         ScaleFEx_on_prem_class.ScaleFEx(PATH_TO_IMAGES, saving_folder=SAVING_FOLDER,experiment_name=EXPERIMENT_NAME,
                         plates=PLATE, channel=channels, roi=ROI, visualization=VISUALIZATION,

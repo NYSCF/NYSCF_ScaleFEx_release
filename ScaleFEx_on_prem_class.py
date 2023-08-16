@@ -204,7 +204,7 @@ class ScaleFEx:
                 scale = 1
 
                 # extraction of the location of the cells
-                if self.location_csv is False:
+                if self.location_csv=='':
                     center_of_mass = nle.retrieve_coordinates(nle.compute_DNA_mask(imgNuc),
                                                                 cell_size_min=self.min_cell_size*self.downsampling,
                                                                 cell_size_max=self.max_cell_size/self.downsampling)
@@ -219,6 +219,7 @@ class ScaleFEx:
                     locations['Plate']=locations['Plate'].astype(str)
                     locations=locations.loc[(locations.Well==well)&(locations.Site==site)&(locations.Plate==plate)]
                     center_of_mass=np.asarray(locations[['CoordX','CoordY']])
+
                 if len(center_of_mass) > 0:
                     field_vec=pd.DataFrame()
                     for cn, com in enumerate(center_of_mass):
@@ -251,7 +252,7 @@ class ScaleFEx:
                                                         'Well'] = well
                                 single_cell_vector.loc[ind,
                                                         'Site'] = site
-                                if self.location_csv is False:
+                                if self.location_csv=='':
                                     single_cell_vector.loc[ind,
                                                             'Cell_ID'] = cn+1
                                     single_cell_vector.loc[ind, 'Cell_Num'] = len(
@@ -265,8 +266,8 @@ class ScaleFEx:
                                                             'distance'] = locations['distance'].values[cn]  # cell2cell_distance[1]
                                     # single_cell_vector.loc[ind,
                                     #                         'Close_Cell_2'] = cell2cell_distance[2]
-                                single_cell_vector.loc[ind,
-                                                            'Cell_ID'] = locations['Cell_ID'].values[cn]
+                                    single_cell_vector.loc[ind,
+                                                                'Cell_ID'] = locations['Cell_ID'].values[cn]
                                 single_cell_vector.loc[ind,
                                                         'CoordX'] = com[0]
                                 single_cell_vector.loc[ind,

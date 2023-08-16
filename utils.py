@@ -16,7 +16,7 @@ def query_data(plate, exp_folder):
         arranged in a different way. The output is a dataframe that contains well, 
         site, channel, file name and file path of each image '''
 
-    files = glob.glob(exp_folder+'*_'+plate+'_*/**/*.tiff')
+    files = glob.glob(exp_folder+'/*_'+plate+'_*/**/*.tiff')
     files.sort()
     print(files[0])
     files = pd.DataFrame(files, columns=['file_path'])
