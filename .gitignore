@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+compute_ScaleFEx.py
 *.vscode
 *.git
 *.ipynb_checkpoints
