@@ -19,16 +19,18 @@ ScaleFEx can be used as a powerful tool to understand the underlying phenotypes 
 If interested in the full-sized dataset, please email the authors at bmigliori@nyscf.org
 
 ## How to use this repository:
-To see an example on how to launch and set ScaleFEx over the entire plate experiment, open **ComputeScaleFEx.py** and change the variables to reflect you paths and experiment type.
+To see an example on how to launch and set ScaleFEx over the entire plate experiment, open **compute_ScaleFEx.py** and change the variables to reflect you paths and experiment type.
+From this file you can specify if to run the computation on the clouds (AWS servers) or on premise. 
+Details on how to set up and run the code on cloud servers are provided in a separate file named **AWS_computing_documentation**
 
 To visualize the masks of single cell's channels while computing ScaleFEx on a small provided example field, open **Example_notebook_ScaleFEx.ipynb**
     
 **NOTE** that since the output is provided in the folder, the function will check if that field has been already calculated and won't re-compute the files. To start a new computation delete the current output
 
 The example field is provided in the "data" folder.
-**ScaleFEx_class.py** is the main function called to generate the computations. It calls all of the other functions to query the data, do pre processing, segmentation, and finally feature extraction
-In the **ComputeScaleFEx.py** file are contained all the functions that compute the class of measurements
-utils.py contains the functions used to process and query the data
+**ScaleFEx_on_prem_class.py** and **ScaleFEx_cloud_class.py** are the main functions called to generate the computations. They call all of the other functions to query the data, do pre processing, segmentation, and finally feature extraction. The first is called when deploying the code on premise, the second when the 
+
+**utils.py** contains the functions used to process and query the data
 **nuclei_location_extraction.py** contains the functions to perform segmentation and nuclei coordinate extraction. 
 
 To see an example of the analysis, run **Scale_Fex_analysis.ipynb**. 
