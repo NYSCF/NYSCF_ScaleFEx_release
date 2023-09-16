@@ -46,11 +46,11 @@ def compute_primary_mask_neuron(simg):
 def compute_shape(chan, regions, ROI, segmented_labels):
 
     df = pd.DataFrame([[]])
-    df['MinRadius_shape' + chan] = np.min(
+    df['MinDiameter_shape' + chan] = np.min(
         [regions[0].bbox[2]-regions[0].bbox[0], regions[0].bbox[3]-regions[0].bbox[1]])
-    df['MaxRadius_shape' +chan] = np.max(
+    df['MaxDiameter_shape' +chan] = np.max(
         [regions[0].bbox[2]-regions[0].bbox[0], regions[0].bbox[3]-regions[0].bbox[1]])
-    df['MeanRadius_shape' + chan] = regions[0].equivalent_diameter
+    df['MeanDiameter_shape' + chan] = regions[0].equivalent_diameter
     df['Area_shape' + chan] = np.nansum(segmented_labels)
     df['Perimeter_shape' +  chan] = regions[0].perimeter
     df['FormFactor_shape' + chan] = (
