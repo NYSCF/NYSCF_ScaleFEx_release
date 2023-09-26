@@ -41,27 +41,30 @@ def ScaleFEx_Main():
     parser.add_argument('-r', '--ressource', # specify weather the computation happends locally or on AWS servers
 						help="whether you want to use your machine or AWS. options: 'cloud' or 'on premise",
 						default="on premise")
+    parser.add_argument('-b', '--bucket', # Name of the s3 bucket containing the data
+						help="Only necessary for cloud implementation",
+						default="scalefex")  
     
     
     args = vars(parser.parse_args())
     EXPERIMENT_NAME = args['experiment']
     print(EXPERIMENT_NAME)
     PLATE = args['plate']
+    BUCKET = args['bucket']
     print(PLATE)
     RESSOURCE = args['ressource']
-
+    print(RESSOURCE)
+    
     if RESSOURCE == 'cloud':
-        print(RESSOURCE)
         SAVING_FOLDER =  '/home/ec2-user/project/'
         CSV_COORDINATES='' # insert here the path to a CSV containing the coordinates of the cells to be analyzed. If empty, the segmentation method will locate the cells
         ScaleFEx_cloud_class.ScaleFEx(RESSOURCE,PATH_TO_IMAGES, saving_folder=SAVING_FOLDER,experiment_name=EXPERIMENT_NAME,
                         plate=PLATE, channel=channels, roi=ROI, visualization=VISUALIZATION,
                         img_size=image_size, save_image=SAVE_IMAGE, stack=STACK,
-                        mito_ch=MITO_CHANNEL, rna_ch=RNA_CHANNEL, downsampling=DOWNSAMPLING,
-                        max_cell_size=MAX_CELL_SIZE, min_cell_size=MIN_CELL_SIZE, location_csv=CSV_COORDINATES,bucket='nyscf-feature-vector')
+                        mito_ch=MITO_CHANNEL, rna_ch=RNA_CHANNEL,neuritis_ch=NEURON_CHANNEL, downsampling=DOWNSAMPLING,
+                        max_cell_size=MAX_CELL_SIZE, min_cell_size=MIN_CELL_SIZE, location_csv=CSV_COORDINATES,bucket=BUCKET,max_processes=60)
         
     else:
-        print(RESSOURCE)
         SAVING_FOLDER = '/~/FeatureVector/'
         CSV_COORDINATES='' # insert here the path to a CSV containing the coordinates of the cells to be analyzed. If empty, the segmentation method will locate the cells
         ScaleFEx_on_prem_class.ScaleFEx(PATH_TO_IMAGES, saving_folder=SAVING_FOLDER,experiment_name=EXPERIMENT_NAME,
