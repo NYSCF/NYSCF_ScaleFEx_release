@@ -62,7 +62,7 @@ def ScaleFEx_Main():
                         plate=PLATE, channel=channels, roi=ROI, visualization=VISUALIZATION,
                         img_size=image_size, save_image=SAVE_IMAGE, stack=STACK,
                         mito_ch=MITO_CHANNEL, rna_ch=RNA_CHANNEL,neuritis_ch=NEURON_CHANNEL, downsampling=DOWNSAMPLING,
-                        max_cell_size=MAX_CELL_SIZE, min_cell_size=MIN_CELL_SIZE, location_csv=CSV_COORDINATES,bucket=BUCKET,max_processes=60)
+                        max_cell_size=MAX_CELL_SIZE, min_cell_size=MIN_CELL_SIZE, location_csv=CSV_COORDINATES,bucket=BUCKET,max_processes=120)
         
     else:
         SAVING_FOLDER = '/~/FeatureVector/'
