@@ -82,7 +82,7 @@ Resources:
   ScaleFExEC2Instance:
     Type: AWS::EC2::Instance
     Properties:
-      InstanceType: c5.18xlarge
+      InstanceType: c5.metal
       ImageId: 'ami-03a6eaae9938c858c'  # Amazon Linux 2023 AMI ID (You can update this as needed)
       NetworkInterfaces:
         - DeleteOnTermination: true
@@ -99,7 +99,8 @@ Resources:
           sudo yum update -y
           sudo yum install git -y
           mkdir project
-          git clone https://github.com/NYSCF/NYSCF_ScaleFEx_release.git ~/project
+          cd project
+          git clone https://github.com/NYSCF/NYSCF_ScaleFEx_release.git project 
           sudo aws s3 sync s3://nyscf-scalefex/results/ project 
           sudo yum install python3 python3-pip -y
           python3 -m pip install --user virtualenv
