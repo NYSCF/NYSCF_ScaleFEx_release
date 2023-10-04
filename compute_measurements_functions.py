@@ -59,8 +59,7 @@ def compute_shape(chan, regions, ROI, segmented_labels):
     df['Extent_shape' + chan] = np.nansum(segmented_labels) / ((2 * ROI) * (2 * ROI))
     df['Eccentricity_shape' + chan] = regions[0].eccentricity
     df['Orientation_shape' + chan] = regions[0].orientation
-    df['Compactness_shape' +
-        chan] = df['MeanRadius_shape' + chan] / np.nansum(segmented_labels)
+    df['Compactness_shape' + chan] = df['MeanRadius_shape' + chan] / np.nansum(segmented_labels)
     return df
 
 

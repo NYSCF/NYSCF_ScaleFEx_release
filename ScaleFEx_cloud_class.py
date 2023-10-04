@@ -143,8 +143,8 @@ class ScaleFEx:
             p.join()
             p.close()  # Close the process (release resources)
 
-        print('done',datetime.now())
-        print('lenght', datetime.now() - self.t1)
+        # print('done',datetime.now())
+        # print('lenght', datetime.now() - self.t1)
 
         utils.upload_to_s3(self.bucket,csv_file)
         with open(f'{self.experiment_name}_{self.plate}_computation_over.txt', 'w') as f:
@@ -159,7 +159,7 @@ class ScaleFEx:
         ind=0
         well = task[:6]
         site = task[-3:]
-        print(site, well, plate, datetime.now())
+        # print(site, well, plate, datetime.now())
         single_cell_vector = pd.DataFrame()
 
         np_images = []
@@ -251,7 +251,6 @@ class ScaleFEx:
                                     center_of_mass)
                             
                                 single_cell_vector.loc[ind,'distance'] = cell2cell_distance[1]
-                                print(ind,cell2cell_distance[1]) 
                                
                             else:
                                 single_cell_vector.loc[ind,
