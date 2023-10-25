@@ -11,6 +11,8 @@ ScaleFex_Paper_normalized.csv
 *.so
 ScaleFEx/
 ScaleFEx.zip
+Launcher_onsite.py
+compute_ScaleFEx.py
 ScaleFex_computed_normalized.csv
 # Distribution / packaging
 .Python

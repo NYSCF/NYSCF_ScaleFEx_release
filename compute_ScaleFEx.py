@@ -6,7 +6,7 @@ import ScaleFEx_on_prem_class
 
 
 # Data path of the images.The code will look for a folder per experiment
-PATH_TO_IMAGES = '~/data/'
+PATH_TO_IMAGES = '/media/biancamigliori/3b0129e9-916e-4029-a23f-615712223e70/HTF0003/'
 # The structure would be /folder_path/experiment_name*Plate_n*/r01c01f01-ch1*.tif
 
 ROI = 150  # radius to define the crop-size
@@ -28,16 +28,16 @@ MAX_CELL_SIZE = 50000  # max area in pixels for nuclei segmentation
 # min area in pixels for nuclei segmentation. These values are set for a 40X image of size 2160x2160
 MIN_CELL_SIZE = 1000
 
-MAX_PROCESSES=1 # number of processes to use to parallelize the computation
+MAX_PROCESSES=10 # number of processes to use to parallelize the computation
 
 def ScaleFEx_Main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-e', '--experiment', # the experiment name is used for path finding
 						help="experiment's name to be processed ex: 'ScaleFEX'",
-                        default="ScaleFEX")
+                        default="HTF0003")
     parser.add_argument('-p', '--plate', # put here all the plates you want to analyze in square brackets
 						help="plate ID if only one plate is to be processed ex: ['Plate1']",
-                        default=['Plate1','Plate2','Plate3','Plate4','Plate5'])
+                        default=['201','202','203','204','205','206'])
     parser.add_argument('-r', '--ressource', # specify weather the computation happends locally or on AWS servers
 						help="whether you want to use your machine or AWS. options: 'cloud' or 'on premise",
 						default="on premise")
@@ -62,8 +62,8 @@ def ScaleFEx_Main():
         
     else:
         print(RESSOURCE)
-        SAVING_FOLDER = '/~/FeatureVector/'
-        CSV_COORDINATES='' # insert here the path to a CSV containing the coordinates of the cells to be analyzed. If empty, the segmentation method will locate the cells
+        SAVING_FOLDER = '/home/biancamigliori/Documents/HCI_Projects/INAD/Vector/'
+        CSV_COORDINATES='/home/biancamigliori/Documents/HCI_Projects/Runs/HTF0003/HTF0003_coordinates.csv' # insert here the path to a CSV containing the coordinates of the cells to be analyzed. If empty, the segmentation method will locate the cells
         ScaleFEx_on_prem_class.ScaleFEx(PATH_TO_IMAGES, saving_folder=SAVING_FOLDER,experiment_name=EXPERIMENT_NAME,
                         plates=PLATE, channel=channels, roi=ROI, visualization=VISUALIZATION,
                         img_size=image_size,  save_image=SAVE_IMAGE, stack=STACK,max_processes=MAX_PROCESSES,
