@@ -3,5 +3,6 @@ numpy==1.24.2
 opencv_python==4.7.0.72
 pandas==2.0.1
 scipy==1.10.1
-skimage==0.0
-boto3==1.28.17 # This is necessary only for the AWS deployment
+scikit-image
+boto3
+ec2-metadata

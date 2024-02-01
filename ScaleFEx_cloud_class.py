@@ -48,9 +48,9 @@ class ScaleFEx:
 
     def __init__(self,ressource, exp_folder, experiment_name='EXP', saving_folder='~/output/',
                  plate=['1'], channel=['ch4', 'ch1', 'ch2', 'ch3', 'ch5'],
-                 img_size=[2160, 2160], parallel=True, save_image=False, stack=False,
-                 min_cell_size=False, max_cell_size=False, mito_ch='ch2', rna_ch='ch5',
-                 downsampling=1, visualization=False, roi=150,location_csv=False,bucket='nyscf-feature-vector'):
+                 img_size=[2160, 2160], save_image=False, stack=False,
+                 min_cell_size=False, max_cell_size=False, mito_ch='ch2', rna_ch='ch5',neuritis_ch='',
+                 downsampling=1, visualization=False, roi=150,location_csv='',bucket='nyscf-feature-vector',max_processes=8):
 
         self.ressource = ressource
         self.stack = stack
@@ -61,6 +61,7 @@ class ScaleFEx:
         self.save_image = save_image
         self.mito_ch = mito_ch
         self.rna_ch = rna_ch
+        self.neuritis_ch = neuritis_ch
         self.downsampling = downsampling
         self.viz = visualization
         self.roi = int(roi/downsampling)
@@ -69,12 +70,16 @@ class ScaleFEx:
         self.location_csv=location_csv
         self.bucket = bucket
         self.plate=plate
+        self.max_processes=max_processes
 
         # Reads the Flat Field corrected image if it exists, otherwise it computes it
         if not os.path.exists(self.saving_folder+experiment_name+'FFC.p'):
             print('Creating flat_field_correction image')
-            files=utils.process_data_files(self.bucket, self.experiment_name,self.plate, saving_folder, self.channel)
             self.flat_field_correction = utils.FFC_on_data_S3(self.bucket, 200, self.channel,self.experiment_name)
+            pickle.dump(self.flat_field_correction, open(self.saving_folder +
+                        experiment_name+'FFC.p', "wb"))
+            utils.upload_to_s3(self.bucket,self.saving_folder +
+                        experiment_name+'FFC.p')
             
         else:
             print('Loading flat_field_correction image')
@@ -95,13 +100,11 @@ class ScaleFEx:
         ''' Function that calls all the functions to compute single cell fixed features 
             on all the images within a plate'''
         
-        files=utils.query_data_files_df(self.bucket,plate,self.experiment_name)
-        wells,fields=utils.make_well_and_field_list(files)
-        csv_file = self.experiment_name+'_'+str(plate)+'_'+'FeatureVector.csv'
-        flag, ind, wells, site_ex, flag2 = utils.check_if_files_exist_s3(self.bucket,
-        csv_file, wells, fields[-1])
-        
-        max_processes = 60
+        files=utils.query_data_files_s3(self.bucket,plate,self.experiment_name)
+        csv_file = self.experiment_name+'_'+str(plate)+'_'+'ScaleFEx.csv'
+        fields=utils.make_well_and_field_list_s3(self.bucket,files,csv_file)
+
+        #Parallelisation
 
         # Create a multiprocessing Manager Queue to hold the tasks
         task_queue = mp.Manager().Queue()   
@@ -111,8 +114,8 @@ class ScaleFEx:
             task_queue.put(task)
 
         # Iterate over wells to generate tasks
-        for well in wells:
-            task = well # Create the task using well information
+        for field in fields:
+            task  = field # Create the task using well information
             add_task_to_queue(task)
 
         def process_worker(semaphore):
@@ -122,16 +125,15 @@ class ScaleFEx:
                     semaphore.release()
                     break  # If the queue is empty, break the loop
                 task = task_queue.get()
-                self.load_preprocess_and_compute_feature(files, plate, task, 
-                                            fields, csv_file)
+                self.load_preprocess_and_compute_feature(files, plate, task, csv_file)
                 semaphore.release()  # Release the permit
-    
+
         # Create a Semaphore with the maximum number of allowed processes
-        process_semaphore = mp.Semaphore(max_processes)
+        process_semaphore = mp.Semaphore(self.max_processes)
 
         # Start the worker processes
         processes = []
-        for _ in range(max_processes):
+        for _ in range(self.max_processes):
             p = mp.Process(target=process_worker, args=(process_semaphore,))
             processes.append(p)
             p.start()
@@ -141,237 +143,133 @@ class ScaleFEx:
             p.join()
             p.close()  # Close the process (release resources)
 
-        utils.csv_to_s3(csv_file)
-        time.sleep(10)
-        utils.terminate_current_instance() #Delete the current instance after the csv was pushed to the s3_bucket
+        print('done',datetime.now())
+        print('lenght', datetime.now() - self.t1)
+
+        utils.upload_to_s3(self.bucket,csv_file)
+        with open(f'{self.experiment_name}_{self.plate}_computation_over.txt', 'w') as f:
+            f.write('Create a new text file!')
+        utils.upload_to_s3(self.bucket,f'{self.experiment_name}_{self.plate}_computation_over.txt')
+        utils.terminate_current_instance() #Delete the current instance after the csv was pushed to the s3_bucket with the flag
 
 
-    def load_preprocess_and_compute_feature(self, files, plate, well,
-                                            fields, csv_file):
+    def load_preprocess_and_compute_feature(self, files, plate,
+                                            task, csv_file):
         ''' Function that imports the images and extracts the location of cells'''
-        if well[0] == 'Over':
-            print('plate ', plate, 'is done')
-            return
         ind=0
-        if self.retrieve is True:
-                well_sites = pd.read_csv(csv_file,usecols=['Well','Site','Cell_ID']).sort_values(by=['Well','Site','Cell_ID'])
-                computed_sites = well_sites.loc[well_sites.Well==well]
-                fields=np.delete(fields,np.where(np.isin(fields,computed_sites)))
-                ind=len(well_sites)
-        print(well, plate, datetime.now())
-        
-        for site in fields:   
-   
-            print(site, well, plate, datetime.now())
-            single_cell_vector = pd.DataFrame()
+        well = task[:6]
+        site = task[-3:]
+        print(site, well, plate, datetime.now())
+        single_cell_vector = pd.DataFrame()
 
-            np_images = []
-            corrupt = False
-            for ch in self.channel:
+        np_images = []
+        corrupt = False
+        for ch in self.channel:
+            image_fnames = files.loc[(files.Well == well) & (
+                files.Site == site) & (files.channel == ch), 'file_path'].values
+            file_path = image_fnames[0][:-21]
+            if self.stack is not True:
+                img = utils.read_image_from_s3(self.bucket,image_fnames[0])
+            else:
+                img = utils.process_zstack(image_fnames)
 
-                image_fnames = files.loc[(files.Well == well) & (
-                    files.Site == site) & (files.channel == ch), 'file_path'].values
-                if self.stack is not True:
-                    img = utils.read_image_from_s3(self.bucket,image_fnames[0])
-                else:
-                    img = utils.process_zstack(image_fnames)
+            if ch == self.channel[0]:
+                imgNuc = img.copy()
+            if self.downsampling != 1:
+                img = cv2.resize(img, self.img_size)
 
-                if ch == self.channel[0]:
-                    imgNuc = img.copy()
-                if self.downsampling != 1:
-                    img = cv2.resize(img, self.img_size)
+            # Check that the image is of the right format
+            if (img is not None) and (img.shape[0] == self.img_size[0]) and (img.shape[1] == self.img_size[1]):
+                img = img/self.flat_field_correction[ch]
 
-                # Check that the image is of the right format
-                if (img is not None) and (img.shape[0] == self.img_size[0]) and (img.shape[1] == self.img_size[1]):
-                    img = img/self.flat_field_correction[ch]
+                img = (img/(np.max(img))) * 255
+                np_images.append(img.astype('uint8'))
 
-                    img = (img/(np.max(img))) * 255
-                    np_images.append(img.astype('uint8'))
+            else:
+                corrupt = True
+                print('Img corrupted')
 
-                else:
-                    corrupt = True
-                    print('Img corrupted')
+        if corrupt is False:
+            np_images = np.array(np_images)
+            np_images = np.expand_dims(np_images, axis=3)
+            scale = 1
 
-            if corrupt is False:
-                np_images = np.array(np_images)
-                np_images = np.expand_dims(np_images, axis=3)
-                scale = 1
+            # extraction of the location of the cells
+            if self.location_csv == '' :
+                center_of_mass = nle.retrieve_coordinates(nle.compute_DNA_mask(imgNuc),
+                                                            cell_size_min=self.min_cell_size*self.downsampling,
+                                                            cell_size_max=self.max_cell_size/self.downsampling)
+                try:
+                    center_of_mass
+                except NameError:
+                    center_of_mass = []
+                    print('No Cells detected')
+            else:
+                locations=pd.read_csv(self.location_csv,index_col=0)
+                locations['Plate']=locations['Plate'].astype(str)
+                locations=locations.loc[(locations.Well==well)&(locations.Site==site)&(locations.Plate==plate)]
+                center_of_mass=np.asarray(locations[['CoordX','CoordY']])
 
-                # extraction of the location of the cells
-                if self.location_csv is False:
-                    print('a')
-                    center_of_mass = nle.retrieve_coordinates(nle.compute_DNA_mask(imgNuc),
-                                                                cell_size_min=self.min_cell_size*self.downsampling,
-                                                                cell_size_max=self.max_cell_size/self.downsampling)
-                    try:
-                        center_of_mass
-                    except NameError:
-                        center_of_mass = []
-                        print('No Cells detected')
-                else:
-                    locations=pd.read_csv(self.location_csv,index_col=0)
-                    locations['Plate']=locations['Plate'].astype(str)
-                    locations=locations.loc[(locations.Well==well)&(locations.Site==site)&(locations.Plate==plate)]
-                    center_of_mass=np.asarray(locations[['CoordX','CoordY']])
-                if len(center_of_mass) > 0:
-                    field_vec=pd.DataFrame()
-                    for cn, com in enumerate(center_of_mass):
-                        com = [
-                            com[0]*(scale/self.downsampling), com[1]*(scale/self.downsampling)]
-                        if ((int(com[0]-self.roi) > 0) and (int(com[0]+self.roi) < self.img_size[0])
-                                and (int(com[1]-self.roi) > 0) and (int(com[1]+self.roi) < self.img_size[1])):
-                            cell2cell_distance = []
-                            for cord in center_of_mass:
-                                cell2cell_distance.append(
-                                    sp.spatial.distance.pdist([com, cord]))
-                                cell2cell_distance.sort()
-                            cell_crop = np.zeros(
-                                (self.roi*2, self.roi*2, len(np_images)))
-                            if self.save_image:
-                                np.save(
-                                    self.save_image+plate+well+site+str(cn)+'.npy', np_images)
+            if len(center_of_mass) > 2 or self.location_csv != '':
+                field_vec=pd.DataFrame()
+                for cn, com in enumerate(center_of_mass):
+                    com = [
+                        com[0]*(scale/self.downsampling), com[1]*(scale/self.downsampling)]
+                    if ((int(com[0]-self.roi) > 0) and (int(com[0]+self.roi) < self.img_size[0])
+                            and (int(com[1]-self.roi) > 0) and (int(com[1]+self.roi) < self.img_size[1])):
+                        cell2cell_distance = []
+                        for cord in center_of_mass:
+                            cell2cell_distance.append(
+                                sp.spatial.distance.pdist([com, cord]))
+                            cell2cell_distance.sort()
+                        cell_crop = np.zeros(
+                            (self.roi*2, self.roi*2, len(np_images)))
+                        if self.save_image:
+                            np.save(
+                                self.save_image+plate+well+site+str(cn)+'.npy', np_images)
+                        
+                        for iii,_ in enumerate(np_images):
+                            cell_crop[:, :, iii] = np_images[iii][int(
+                                com[0]-self.roi):int(com[0]+self.roi), int(com[1]-self.roi):int(com[1]+self.roi), 0]
+
+                        quality_flag, single_cell_vector = compute_measurements_functions.single_cell_feature_extraction(
+                            cell_crop, self.channel,self.roi,self.mito_ch,self.rna_ch,self.neuritis_ch,self.downsampling,self.viz)
+
+                        if quality_flag is True:
+
+                            single_cell_vector.index = [ind]
+                            single_cell_vector.loc[ind,
+                                                    'file_path'] = file_path
+                            single_cell_vector.loc[ind,
+                                                    'Well'] = well
+                            single_cell_vector.loc[ind,
+                                                    'Site'] = site
+                            if self.location_csv=='':
+                                single_cell_vector.loc[ind,
+                                                        'Cell_ID'] = cn+1
+                                single_cell_vector.loc[ind, 'Cell_Num'] = len(
+                                    center_of_mass)
                             
-                            for iii,_ in enumerate(np_images):
-                                cell_crop[:, :, iii] = np_images[iii][int(
-                                    com[0]-self.roi):int(com[0]+self.roi), int(com[1]-self.roi):int(com[1]+self.roi), 0]
-
-                            quality_flag, single_cell_vector = self.single_cell_feature_extraction(
-                                cell_crop, self.channel)
-
-                            if quality_flag is True:
-
-                                single_cell_vector.index = [ind]
+                                single_cell_vector.loc[ind,'distance'] = cell2cell_distance[1]
+                                print(ind,cell2cell_distance[1]) 
+                               
+                            else:
                                 single_cell_vector.loc[ind,
-                                                        'Well'] = well
-                                single_cell_vector.loc[ind,
-                                                        'Site'] = site
-                                if self.location_csv is False:
-                                    single_cell_vector.loc[ind,
-                                                            'Cell_ID'] = cn+1
-                                    single_cell_vector.loc[ind, 'Cell_Num'] = len(
-                                        center_of_mass)
-                                    single_cell_vector.loc[ind,
-                                                            'distance'] = cell2cell_distance[1]
-                                else:
-                                    single_cell_vector.loc[ind,
-                                                            'distance'] = locations['distance'].values[cn]  # cell2cell_distance[1]
+                                                        'distance'] = locations['distance'].values[cn]  # cell2cell_distance[1]
+                            
                                 single_cell_vector.loc[ind,
                                                             'Cell_ID'] = locations['Cell_ID'].values[cn]
-                                single_cell_vector.loc[ind,
-                                                        'CoordX'] = com[0]
-                                single_cell_vector.loc[ind,
-                                                        'CoordY'] = com[1]
-                                field_vec=pd.concat([field_vec,single_cell_vector],axis=0)
+                            single_cell_vector.loc[ind,
+                                                    'CoordX'] = com[0]
+                            single_cell_vector.loc[ind,
+                                                    'CoordY'] = com[1]
+                            field_vec=pd.concat([field_vec,single_cell_vector],axis=0)
+                            ind+=1
 
-                    field_vec.to_csv(
-                        csv_file[:-4]+'.csv', mode='a', header=flag)
-                    
-                    field_vec.to_csv(f"ScaleFex_{self.experiment_name}_{self.plate}_{well}.csv", mode='w', header=True)
-                    utils.csv_to_s3(f'ScaleFex_{self.experiment_name}_{self.plate}_{well}.csv')
-
-                    flag = False
-                    ind += 1
-                    print(well,'well',site,'site',ind,'ind')
-
-    def single_cell_feature_extraction(self, simg, channels):
-        '''Computes the features and appends them into a single line vector'''
-        roi = self.roi
-        segmented_labels = {}
-        regions = {}
-        measurements = pd.DataFrame([[]])
-
-        for i,chan in enumerate(channels):
-
-            segmented_labels[i] = compute_measurements_functions.compute_primary_mask(
-                simg[:, :, i])
-
-            if i == 0:
-                nn = segmented_labels[i][self.roi, self.roi]
-                segmented_labels[i] = segmented_labels[i] == nn
-
-            else:
-                nn = segmented_labels[i][int(self.roi/2):int(self.roi*(3/2)),
-                            int(self.roi/2):int(self.roi*(3/2))]
-
-                try:
-                    nn = np.bincount(nn[nn > 0]).argmax()
-                except:
-                    print('out except for size inconsistency')
-                    return False, False
-
-                segmented_labels[i] = segmented_labels[i] == nn
-
-            invMask = segmented_labels[i] < 1
-
-            if self.viz is True:
-                utils.show_cells([simg[:, :, i], segmented_labels[i]], title=[
-                                 chan + '_'+str(i), 'mask'])
-
-            if np.count_nonzero(segmented_labels[i]) <= 50/self.downsampling:
-                print('out size')
-                return False, False
-
-            a = simg[:, :, i]*segmented_labels[i]
-            b = a[a > 0]
-
-            a = simg[:, :, i]*invMask
-
-            c = a[a > 0]
-
-            SNR = np.mean(b)/np.std(c)
-            measurements['SNR_intensity' + chan] = SNR
-            regions[i] = skimage.measure.regionprops(segmented_labels[i].astype(int))
-
-            # Shape
-
-            measurements = pd.concat([measurements, compute_measurements_functions.compute_shape(
-                chan, regions[i], roi, segmented_labels[i])], axis=1)
-
-            # Texture
-            measurements = pd.concat([measurements, compute_measurements_functions.iter_text(
-                chan, simg[:, :, i], segmented_labels[i], ndistance=5, nangles=4)], axis=1)
-            measurements = pd.concat([measurements, compute_measurements_functions.texture_single_values(
-                chan, segmented_labels[i], simg[:, :, i])], axis=1)
-
-            # Granularity
-
-            measurements = pd.concat([measurements, compute_measurements_functions.granularity(
-                chan, simg[:, :, i], n_convolutions=16)], axis=1)
-
-            # Intensity
-            measurements = pd.concat([measurements, compute_measurements_functions.intensity(
-                simg[:, :, i], segmented_labels[i], chan, regions[i])], axis=1)
-
-            # Concentric measurements
-
-            scale = 8
-            if chan == channels[0]:
-                nuc = measurements['MaxRadius_shape'+channels[0]].values[0] * 0.1
-            else:
-                nuc = 0
-            measurements = pd.concat([measurements, compute_measurements_functions.concentric_measurements(
-                scale, roi, simg[:, :, i], segmented_labels[i], chan, DAPI=nuc)], axis=1)
-
-        # mito_chondria measurements
-
-            if chan == self.mito_ch:
-                measurements = pd.concat([measurements, compute_measurements_functions.mitochondria_measurement(
-                    segmented_labels[i], simg[:, :, i], viz=self.viz)], axis=1)
-
-        # RNA measurements
-
-            if chan == self.rna_ch:
-                measurements = pd.concat([measurements, compute_measurements_functions.RNA_measurement(
-                    segmented_labels[0], simg[:, :, i], viz=self.viz)], axis=1)
-
-        # Colocalization
-
-        for i,chan in enumerate(channels):
-            chan = channels[i]
-            for j in range(i + 1, len(channels) - 1):
-                measurements = pd.concat([measurements, compute_measurements_functions.correlation_measurements(
-                    simg[:, :, i], simg[:, :, j], chan, channels[j], segmented_labels[i],
-                    segmented_labels[j])], axis=1)
-
-        quality_flag = True
-        return quality_flag, measurements
+                if os.path.exists(csv_file[:-4]+'.csv'):
+                    flag=False
+                else:
+                    flag=True
+                field_vec.to_csv(
+                    csv_file[:-4]+'.csv', mode='a', header=flag)
+                utils.upload_to_s3(self.bucket,csv_file)
