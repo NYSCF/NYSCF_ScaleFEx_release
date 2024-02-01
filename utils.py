@@ -27,6 +27,23 @@ def query_data(plate, exp_folder):
     files['plane'] = [i[i.find('p'):i.find('p')+3] for i in files.filename]
     return files
 
+def query_data_rxrx(plate, exp_folder):
+    ''' Queries the data from the folders and extracts wells, sites and channels. 
+        This is the main function to be changed if the user's has the files 
+        arranged in a different way. The output is a dataframe that contains well, 
+        site, channel, file name and file path of each image '''
+
+    files = glob.glob(exp_folder+'*'+plate+'/*')
+    files.sort()
+    print(files[0])
+    files = pd.DataFrame(files, columns=['file_path'])
+    files['filename'] = [i[i.find(plate)+1:] for i in files.file_path]
+    files['Well'] = [i[:i.find('_')] for i in files.filename]
+    files['Site'] = [i[i.find('s'):i.find('s')+2] for i in files.filename]
+    files['channel'] = [i[i.find('w'):i.find('w')+2] for i in files.filename]
+    #files['plane'] = [i[i.find('p'):i.find('p')+3] for i in files.filename]
+    return files
+
 def make_well_and_field_list(files):
     ''' inspects the image file name and extracts the unique fields and wells to loop over'''
     wells = np.unique(files.Well)
@@ -72,6 +89,7 @@ def flat_field_correction_on_data(files, n_images, channel):
         for i in range(1, n_images):
             img = np.stack([load_image(B.iloc[i].filename), img], axis=2)
             img = np.min(img, axis=2)
+            img[img==0]=1
         flat_field_correction[ch] = img
     return flat_field_correction
 
